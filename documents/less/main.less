@@ -1,0 +1,54 @@
+@import "_vars.less";
+@import "_mixins.less";
+@import "_icons.less";
+
+/******** Simple reset		********/
+html, body { height:100%; font-size:1rem; line-height:@vrythm; }
+* { margin:0; padding:0;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+}
+
+/* Icons manager */
+header { line-height:(@vrythm*3); text-align:center; }
+main { text-align:center; width:(@gutter*30*2+4*@gutter); margin:0 auto; }
+footer { clear:both; line-height:(@vrythm*3); text-align:center; }
+
+/* Icons manager */
+.icons {
+  .section();
+}
+.icons input { display:none; }
+.icons_title { .title(); }
+.icons_add { float:right; background:#000; padding:0 @gutter; height:(@vrythm*2); }
+.icons_add span { display:none; }
+.icons_add a:before { .icon('\e002'); color:#FFF; }
+.icons_list { clear:both; list-style-type:none; height:(@vrythm*8); overflow-y:auto; }
+.icons_list li:nth-child(2n) { background:#ddd; height:(@vrythm*2); }
+.icons_list li:nth-child(2n+1) { background:#fff; height:(@vrythm*2); }
+.icons_list strong { padding:0 @gutter; }
+.icons_list a { float:right; padding:0 @gutter; height:(@vrythm*2); color:#000; text-decoration:none; }
+.icons_list a span { display:none; }
+.icons_list a:before { .icon('\e007'); }
+
+/* Font renderer */
+.options {
+  .section();
+}
+.options_title { .title();  }
+
+/* Font renderer */
+.font {
+  .section((@vrythm*22));
+}
+.font_title { .title();  }
+.font_save { float:right; background:#000; padding:0 @gutter; height:(@vrythm*2); }
+.font_save span { display:none; }
+.font_save a:before { .icon('\e003'); color:#FFF; }
+.font_preview {
+  speak: none; font-size:6em; font-style: normal;
+  font-weight: normal; font-variant: normal; text-transform: none;
+  line-height:1; -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; height:(@vrythm*18); overflow-y:auto;
+}

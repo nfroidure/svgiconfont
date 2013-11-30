@@ -1,0 +1,24 @@
+/* Icons */
+@font-face {
+	font-family: 'iconsfont';
+	src:url('../fonts/iconsfont.eot');
+	src:url('../fonts/iconsfont.eot') format('embedded-opentype'),
+		url('../fonts/iconsfont.ttf') format('truetype'),
+		url('../fonts/iconsfont.woff') format('woff'),
+		url('../fonts/iconsfont.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+.icon (@codepoint: '\0020') {
+	font-family: 'iconsfont';
+	speak: none;
+	font-size:100%;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	line-height:2rem;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	content:@codepoint;
+}
