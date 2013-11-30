@@ -41,6 +41,7 @@ iconInput.addEventListener('change', function(event) {
       fileList.push(iconInput.files[i]);
     }
   }
+  iconInput.value=null;
   renderFont();
 });
 
@@ -57,6 +58,7 @@ function renderFont() {
   while(iconList.firstChild) {
     iconList.removeChild(iconList.firstChild);
   }
+  iconPreview.innerHTML = '';
 
   if(!fileList.length) {
     return;

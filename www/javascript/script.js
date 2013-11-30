@@ -1,374 +1,4 @@
 ;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-// AMD + global + NodeJS : You can use this object by inserting a script
-// or using an AMD loader (like RequireJS) or using NodeJS
-(function(root,define){ define([], function() {
-// START: Module logic start
-
-	// Commandor constructor : rootElement is the element
-	// from wich we capture commands
-	var Commandor=function Commandor(rootElement) {
-		// event handlers
-		var _pointerDownListener, _pointerUpListener, _pointerClickListener,
-			_touchstartListener, _touchendListener, _clickListener,
-			_keydownListener, _keyupListener,
-			_formChangeListener, _formSubmitListener,
-		// Commands hashmap
-			_commands={'____internal':true};
-		;
-		// Testing rootElement
-		if(!rootElement) {
-			throw Error('No rootElement given');
-		}
-		// keeping a reference to the rootElement
-		this.rootElement=rootElement;
-		// MS Pointer events : should unify pointers, but... read and see by yourself. 
-		if(!!('onmsgesturechange' in window)) {
-			// event listeners for buttons
-			(function() {
-				var curElement=null;
-				_pointerDownListener=function(event) {
-					curElement=this.findButton(event.target)||this.findForm(event.target);
-					curElement&&event.preventDefault()||event.stopPropagation();
-				}.bind(this);
-				_pointerUpListener=function(event) {
-					if(curElement) {
-						if(curElement===this.findButton(event.target)) {
-							this.captureButton(event);
-						} else if(curElement===this.findForm(event.target)) {
-							this.captureForm(event);
-						}
-						event.preventDefault(); event.stopPropagation();
-						curElement=null;
-					}
-				}.bind(this);
-				this.rootElement.addEventListener('MSPointerDown', _pointerDownListener, true);
-				this.rootElement.addEventListener('MSPointerUp', _pointerUpListener, true);
-			}).call(this);
-			// fucking IE10 bug : it doesn't cancel click event
-			// when gesture events are cancelled
-			_pointerClickListener=function(event){
-					if(this.findButton(event.target)) {
-						event.preventDefault();
-						event.stopPropagation();
-					}
-				}.bind(this);
-			this.rootElement.addEventListener('click',_pointerClickListener,true);
-		} else {
-			// Touch events
-			if(!!('ontouchstart' in window)) {
-				(function() {
-					// a var keepin' the touchstart element
-					var curElement=null;
-					_touchstartListener=function(event) {
-						curElement=this.findButton(event.target)||this.findForm(event.target);
-						curElement&&event.preventDefault()||event.stopPropagation();
-					}.bind(this);
-					this.rootElement.addEventListener('touchstart', _touchstartListener, true);
-					// checking it's the same at touchend, capturing command if so
-					_touchendListener=function(event) {
-						if(curElement==this.findButton(event.target)) {
-							this.captureButton(event);
-						} else if(curElement===this.findForm(event.target)) {
-							this.captureForm(event);
-						} else {
-							curElement=null;
-						}
-					}.bind(this);
-					this.rootElement.addEventListener('touchend', _touchendListener,true);
-				}).call(this);
-			}
-		// Clic events
-		_clickListener=this.captureButton.bind(this);
-		this.rootElement.addEventListener('click', _clickListener, true);
-		}
-		// Keyboard events
-		// Cancel keydown action (no click event)
-		_keydownListener=function(event) {
-			if(13===event.keyCode&&(this.findButton(event.target)
-				||this.findForm(event.target))) {
-				event.preventDefault()&&event.stopPropagation();
-			}
-		}.bind(this);
-		this.rootElement.addEventListener('keydown', _keydownListener, true);
-		// Fire on keyup
-		_keyupListener=function(event) {
-			if(13===event.keyCode&&!event.ctrlKey) {
-				if(this.findButton(event.target)) {
-					this.captureButton.apply(this, arguments);
-				} else {
-					this.captureForm.apply(this, arguments);
-				}
-			}
-		}.bind(this);
-		this.rootElement.addEventListener('keyup', _keyupListener, true);
-		// event listeners for forms submission
-		_formSubmitListener=this.captureForm.bind(this);
-		this.rootElement.addEventListener('submit', _formSubmitListener, true);
-		// event listeners for form changes
-		_formChangeListener=this.formChange.bind(this);
-		this.rootElement.addEventListener('change', _formChangeListener, true);
-		this.rootElement.addEventListener('select', _formChangeListener, true);
-
-		// Common command executor
-		this.executeCommand=function (event,command,element) {
-			if(!_commands) {
-				throw Error('Cannot execute command on a disposed Commandor object.');
-			}
-			// checking for the app protocol
-			if(0!==command.indexOf('app:'))
-				return false;
-			// removing app:
-			command=command.substr(4);
-			var chunks=command.split('?');
-			// the first chunk is the command path
-			var callback=_commands;
-			var nodes=chunks[0].split('/');
-			for(var i=0, j=nodes.length; i<j-1; i++) {
-				if(!callback[nodes[i]]) {
-					throw Error('Cannot execute the following command "'+command+'".');
-				}
-				callback=callback[nodes[i]];
-			}
-			if('function' !== typeof callback[nodes[i]]) {
-				throw Error('Cannot execute the following command "'+command+'", not a fucntion.');
-			}
-			// Preparing arguments
-			var args={};
-			if(chunks[1]) {
-				chunks=chunks[1].split('&');
-				for(var k=0, l=chunks.length; k<l; k++) {
-					var parts=chunks[k].split('=');
-					if(undefined!==parts[0]&&undefined!==parts[1]) {
-						args[parts[0]]=decodeURIComponent(parts[1]);
-					}
-				}
-			}
-			// executing the command fallback
-			if(callback.____internal) {
-				return !!!((callback[nodes[i]])(event,args,element));
-			} else {
-				return !!!(callback[nodes[i]](event,args,element));
-			}
-			return !!!callback(event,args,element);
-		};
-
-		// Add a callback or object for the specified path
-		this.suscribe=function(path,callback) {
-			if(!_commands) {
-				throw Error('Cannot suscribe commands on a disposed Commandor object.');
-			}
-			var nodes=path.split('/'),
-				command=_commands;
-			for(var i=0, j=nodes.length-1; i<j; i++) {
-				if((!command[nodes[i]])||!(command[nodes[i]] instanceof Object)) {
-					command[nodes[i]]={'____internal':true};
-				}
-				command=command[nodes[i]];
-				if(!command.____internal) {
-					throw Error('Cannot suscribe commands on an external object.');
-				}
-			}
-			command[nodes[i]]=callback;
-		};
-
-		// Delete callback for the specified path
-		this.unsuscribe=function(path) {
-			if(!_commands) {
-				throw Error('Cannot unsuscribe commands of a disposed Commandor object.');
-			}
-			var nodes=path.split('/'),
-				command=_commands;
-			for(var i=0, j=nodes.length-1; i<j; i++) {
-				command=command[nodes[i]]={};
-			}
-			if(!command.____internal) {
-				throw Error('Cannot unsuscribe commands of an external object.');
-			}
-			command[nodes[i]]=null;
-		};
-
-		// Dispose the commandor object (remove event listeners)
-		this.dispose=function() {
-			_commands=null;
-			if(_pointerDownListener) {
-				this.rootElement.removeEventListener('MSPointerDown',
-					_pointerDownListener, true);
-				this.rootElement.removeEventListener('MSPointerUp',
-					_pointerUpListener, true);
-				this.rootElement.removeEventListener('click',
-					_pointerClickListener, true);
-			}
-			if(_touchstartListener) {
-				this.rootElement.removeEventListener('touchstart',
-					_touchstartListener, true);
-				this.rootElement.removeEventListener('touchend',
-					_touchendListener, true);
-			}
-			this.rootElement.removeEventListener('click', _clickListener, true);
-			this.rootElement.removeEventListener('keydown', _keydownListener, true);
-			this.rootElement.removeEventListener('keyup', _keyupListener, true);
-			this.rootElement.removeEventListener('change', _formChangeListener, true);
-			this.rootElement.removeEventListener('select', _formChangeListener, true);
-			this.rootElement.removeEventListener('submit', _formSubmitListener, true);
-		};
-	}
-
-	// Look for a button
-	Commandor.prototype.findButton=function(element) {
-		while(element&&element.parentNode) {
-			if('A'===element.nodeName
-				&&element.hasAttribute('href')
-				&&-1!==element.getAttribute('href').indexOf('app:')) {
-				return element;
-			}
-			if('INPUT'===element.nodeName&&element.hasAttribute('type')
-				&&(element.getAttribute('type')=='submit'
-						||element.getAttribute('type')=='button')
-				&&element.hasAttribute('formaction')
-				&&-1!==element.getAttribute('formaction').indexOf('app:')
-				) {
-				return element;
-			}
-			if(element===this.rootElement) {
-				return null;
-			}
-			element=element.parentNode;
-		}
-		return null;
-	}
-
-	// Look for a form
-	Commandor.prototype.findForm=function(element) {
-		if('FORM'===element.nodeName||
-			('INPUT'===element.nodeName&&element.hasAttribute('type')
-			&&'submit'===element.getAttribute('type'))) {
-			while(element&&element.parentNode) {
-				if('FORM'===element.nodeName&&element.hasAttribute('action')
-					&&-1!==element.getAttribute('action').indexOf('app:')) {
-					return element;
-				}
-				if(element===this.rootElement) {
-					return null;
-				}
-				element=element.parentNode;
-			}
-			return element;
-		}
-		return null;
-	};
-
-	// Look for form change
-	Commandor.prototype.findFormChange=function(element) {
-		while(element&&element.parentNode) {
-			if('FORM'===element.nodeName&&element.hasAttribute('action')
-				&&-1!==element.getAttribute('action').indexOf('app:')) {
-				return element;
-			}
-			if(element===this.rootElement) {
-				return null;
-			}
-			element=element.parentNode;
-		}
-		return element;
-	};
-
-	// Extract the command for a button
-	Commandor.prototype.doCommandOfButton=function(element, event) {
-		var command='';
-		// looking for a button with formaction attribute
-		if('INPUT'===element.nodeName) {
-			command=element.getAttribute('formaction');
-		// looking for a link
-		} else if('A'===element.nodeName) {
-			command=element.getAttribute('href');
-		}
-		// executing the command
-		this.executeCommand(event,command,element);
-	};
-
-	// Button event handler
-	Commandor.prototype.captureButton=function(event) {
-		var element=this.findButton(event.target);
-		// if there is a button, stop event
-		if(element) {
-			// if the button is not disabled, run the command
-			if((!element.hasAttribute('disabled'))
-				||'disabled'===element.getAttribute('disabled')) {
-				this.doCommandOfButton(element, event);
-			}
-			event.stopPropagation()||event.preventDefault();
-		}
-	};
-
-	// Form change handler
-	Commandor.prototype.formChange=function(event) {
-		// find the evolved form
-		var element=this.findFormChange(event.target),
-			command='';
-		// searching the data-change attribute containing the command
-		if('FORM'===element.nodeName&&element.hasAttribute('data-change')) {
-			command=element.getAttribute('data-change');
-		}
-		// executing the command
-		command&&this.executeCommand(event,command,element);
-	};
-
-	// Extract the command for a button
-	Commandor.prototype.doCommandOfForm=function(element, event) {
-		var command='';
-		// looking for a button with formaction attribute
-		if('FORM'===element.nodeName) {
-			command=element.getAttribute('action');
-		}
-		// executing the command
-		this.executeCommand(event,command,element);
-	};
-
-	// Form command handler
-	Commandor.prototype.captureForm=function(event) {
-		var element=this.findForm(event.target);
-		// if there is a button, stop event
-		if(element) {
-			// if the button is not disabled, run the command
-			if((!element.hasAttribute('disabled'))
-				||'disabled'===element.getAttribute('disabled')) {
-				this.doCommandOfForm(element, event);
-			}
-			event.stopPropagation()||event.preventDefault();
-		}
-	};
-
-// END: Module logic end
-
-	return Commandor;
-
-
-});})(this,typeof define === 'function' && define.amd ?
-	// AMD
-	define :
-	// NodeJS
-	(typeof exports === 'object'?function (name, deps, factory) {
-		var root=this;
-		if(typeof name === 'object') {
-			factory=deps; deps=name;
-		}
-		module.exports=factory.apply(this, deps.map(function(dep){
-			return require(dep);
-		}));
-	}:
-	// Global
-	function (name, deps, factory) {
-		var root=this;
-		if(typeof name === 'object') {
-			factory=deps; deps=name;  name='Commandor';
-		}
-		this[name.substring(name.lastIndexOf('/')+1)]=factory.apply(this, deps.map(function(dep){
-			return root[dep.substring(dep.lastIndexOf('/')+1)];
-		}));
-	}.bind(this))
-);
-
-},{}],2:[function(require,module,exports){
 
 
 //
@@ -586,7 +216,7 @@ if (typeof Object.getOwnPropertyDescriptor === 'function') {
   exports.getOwnPropertyDescriptor = valueObject;
 }
 
-},{}],3:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -659,7 +289,7 @@ function onend() {
   timers.setImmediate(shims.bind(this.end, this));
 }
 
-},{"_shims":2,"_stream_readable":5,"_stream_writable":7,"timers":13,"util":14}],4:[function(require,module,exports){
+},{"_shims":1,"_stream_readable":4,"_stream_writable":6,"timers":12,"util":13}],3:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -702,7 +332,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"_stream_transform":6,"util":14}],5:[function(require,module,exports){
+},{"_stream_transform":5,"util":13}],4:[function(require,module,exports){
 var process=require("__browserify_process");// Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1623,7 +1253,7 @@ function endReadable(stream) {
   }
 }
 
-},{"__browserify_process":19,"_shims":2,"buffer":16,"events":9,"stream":11,"string_decoder":12,"timers":13,"util":14}],6:[function(require,module,exports){
+},{"__browserify_process":18,"_shims":1,"buffer":15,"events":8,"stream":10,"string_decoder":11,"timers":12,"util":13}],5:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1829,7 +1459,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-},{"_stream_duplex":3,"util":14}],7:[function(require,module,exports){
+},{"_stream_duplex":2,"util":13}],6:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2199,7 +1829,7 @@ function endWritable(stream, state, cb) {
   state.ended = true;
 }
 
-},{"buffer":16,"stream":11,"timers":13,"util":14}],8:[function(require,module,exports){
+},{"buffer":15,"stream":10,"timers":12,"util":13}],7:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2516,7 +2146,7 @@ assert.doesNotThrow = function(block, /*optional*/message) {
 };
 
 assert.ifError = function(err) { if (err) {throw err;}};
-},{"_shims":2,"util":14}],9:[function(require,module,exports){
+},{"_shims":1,"util":13}],8:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2797,7 +2427,7 @@ EventEmitter.listenerCount = function(emitter, type) {
     ret = emitter._events[type].length;
   return ret;
 };
-},{"util":14}],10:[function(require,module,exports){
+},{"util":13}],9:[function(require,module,exports){
 var process=require("__browserify_process");// Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3008,7 +2638,7 @@ exports.extname = function(path) {
   return splitPath(path)[3];
 };
 
-},{"__browserify_process":19,"_shims":2,"util":14}],11:[function(require,module,exports){
+},{"__browserify_process":18,"_shims":1,"util":13}],10:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3137,7 +2767,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"_stream_duplex":3,"_stream_passthrough":4,"_stream_readable":5,"_stream_transform":6,"_stream_writable":7,"events":9,"util":14}],12:[function(require,module,exports){
+},{"_stream_duplex":2,"_stream_passthrough":3,"_stream_readable":4,"_stream_transform":5,"_stream_writable":6,"events":8,"util":13}],11:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3330,7 +2960,7 @@ function base64DetectIncompleteChar(buffer) {
   return incomplete;
 }
 
-},{"buffer":16}],13:[function(require,module,exports){
+},{"buffer":15}],12:[function(require,module,exports){
 try {
     // Old IE browsers that do not curry arguments
     if (!setTimeout.call) {
@@ -3449,7 +3079,7 @@ if (!exports.setImmediate) {
   };
 }
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3994,7 +3624,7 @@ function hasOwnProperty(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
-},{"_shims":2}],15:[function(require,module,exports){
+},{"_shims":1}],14:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -4080,7 +3710,7 @@ exports.writeIEEE754 = function(buffer, value, offset, isBE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var assert;
 exports.Buffer = Buffer;
 exports.SlowBuffer = Buffer;
@@ -5206,7 +4836,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
   writeDouble(this, value, offset, true, noAssert);
 };
 
-},{"./buffer_ieee754":15,"assert":8,"base64-js":17}],17:[function(require,module,exports){
+},{"./buffer_ieee754":14,"assert":7,"base64-js":16}],16:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -5292,7 +4922,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
@@ -7672,7 +7302,7 @@ function hasOwnProperty(obj, prop) {
 },{"_shims":5}]},{},[])
 ;;module.exports=require("buffer-browserify")
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -7725,6 +7355,376 @@ process.cwd = function () { return '/' };
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
+
+},{}],19:[function(require,module,exports){
+// AMD + global + NodeJS : You can use this object by inserting a script
+// or using an AMD loader (like RequireJS) or using NodeJS
+(function(root,define){ define([], function() {
+// START: Module logic start
+
+	// Commandor constructor : rootElement is the element
+	// from wich we capture commands
+	var Commandor=function Commandor(rootElement) {
+		// event handlers
+		var _pointerDownListener, _pointerUpListener, _pointerClickListener,
+			_touchstartListener, _touchendListener, _clickListener,
+			_keydownListener, _keyupListener,
+			_formChangeListener, _formSubmitListener,
+		// Commands hashmap
+			_commands={'____internal':true};
+		;
+		// Testing rootElement
+		if(!rootElement) {
+			throw Error('No rootElement given');
+		}
+		// keeping a reference to the rootElement
+		this.rootElement=rootElement;
+		// MS Pointer events : should unify pointers, but... read and see by yourself. 
+		if(!!('onmsgesturechange' in window)) {
+			// event listeners for buttons
+			(function() {
+				var curElement=null;
+				_pointerDownListener=function(event) {
+					curElement=this.findButton(event.target)||this.findForm(event.target);
+					curElement&&event.preventDefault()||event.stopPropagation();
+				}.bind(this);
+				_pointerUpListener=function(event) {
+					if(curElement) {
+						if(curElement===this.findButton(event.target)) {
+							this.captureButton(event);
+						} else if(curElement===this.findForm(event.target)) {
+							this.captureForm(event);
+						}
+						event.preventDefault(); event.stopPropagation();
+						curElement=null;
+					}
+				}.bind(this);
+				this.rootElement.addEventListener('MSPointerDown', _pointerDownListener, true);
+				this.rootElement.addEventListener('MSPointerUp', _pointerUpListener, true);
+			}).call(this);
+			// fucking IE10 bug : it doesn't cancel click event
+			// when gesture events are cancelled
+			_pointerClickListener=function(event){
+					if(this.findButton(event.target)) {
+						event.preventDefault();
+						event.stopPropagation();
+					}
+				}.bind(this);
+			this.rootElement.addEventListener('click',_pointerClickListener,true);
+		} else {
+			// Touch events
+			if(!!('ontouchstart' in window)) {
+				(function() {
+					// a var keepin' the touchstart element
+					var curElement=null;
+					_touchstartListener=function(event) {
+						curElement=this.findButton(event.target)||this.findForm(event.target);
+						curElement&&event.preventDefault()||event.stopPropagation();
+					}.bind(this);
+					this.rootElement.addEventListener('touchstart', _touchstartListener, true);
+					// checking it's the same at touchend, capturing command if so
+					_touchendListener=function(event) {
+						if(curElement==this.findButton(event.target)) {
+							this.captureButton(event);
+						} else if(curElement===this.findForm(event.target)) {
+							this.captureForm(event);
+						} else {
+							curElement=null;
+						}
+					}.bind(this);
+					this.rootElement.addEventListener('touchend', _touchendListener,true);
+				}).call(this);
+			}
+		// Clic events
+		_clickListener=this.captureButton.bind(this);
+		this.rootElement.addEventListener('click', _clickListener, true);
+		}
+		// Keyboard events
+		// Cancel keydown action (no click event)
+		_keydownListener=function(event) {
+			if(13===event.keyCode&&(this.findButton(event.target)
+				||this.findForm(event.target))) {
+				event.preventDefault()&&event.stopPropagation();
+			}
+		}.bind(this);
+		this.rootElement.addEventListener('keydown', _keydownListener, true);
+		// Fire on keyup
+		_keyupListener=function(event) {
+			if(13===event.keyCode&&!event.ctrlKey) {
+				if(this.findButton(event.target)) {
+					this.captureButton.apply(this, arguments);
+				} else {
+					this.captureForm.apply(this, arguments);
+				}
+			}
+		}.bind(this);
+		this.rootElement.addEventListener('keyup', _keyupListener, true);
+		// event listeners for forms submission
+		_formSubmitListener=this.captureForm.bind(this);
+		this.rootElement.addEventListener('submit', _formSubmitListener, true);
+		// event listeners for form changes
+		_formChangeListener=this.formChange.bind(this);
+		this.rootElement.addEventListener('change', _formChangeListener, true);
+		this.rootElement.addEventListener('select', _formChangeListener, true);
+
+		// Common command executor
+		this.executeCommand=function (event,command,element) {
+			if(!_commands) {
+				throw Error('Cannot execute command on a disposed Commandor object.');
+			}
+			// checking for the app protocol
+			if(0!==command.indexOf('app:'))
+				return false;
+			// removing app:
+			command=command.substr(4);
+			var chunks=command.split('?');
+			// the first chunk is the command path
+			var callback=_commands;
+			var nodes=chunks[0].split('/');
+			for(var i=0, j=nodes.length; i<j-1; i++) {
+				if(!callback[nodes[i]]) {
+					throw Error('Cannot execute the following command "'+command+'".');
+				}
+				callback=callback[nodes[i]];
+			}
+			if('function' !== typeof callback[nodes[i]]) {
+				throw Error('Cannot execute the following command "'+command+'", not a fucntion.');
+			}
+			// Preparing arguments
+			var args={};
+			if(chunks[1]) {
+				chunks=chunks[1].split('&');
+				for(var k=0, l=chunks.length; k<l; k++) {
+					var parts=chunks[k].split('=');
+					if(undefined!==parts[0]&&undefined!==parts[1]) {
+						args[parts[0]]=decodeURIComponent(parts[1]);
+					}
+				}
+			}
+			// executing the command fallback
+			if(callback.____internal) {
+				return !!!((callback[nodes[i]])(event,args,element));
+			} else {
+				return !!!(callback[nodes[i]](event,args,element));
+			}
+			return !!!callback(event,args,element);
+		};
+
+		// Add a callback or object for the specified path
+		this.suscribe=function(path,callback) {
+			if(!_commands) {
+				throw Error('Cannot suscribe commands on a disposed Commandor object.');
+			}
+			var nodes=path.split('/'),
+				command=_commands;
+			for(var i=0, j=nodes.length-1; i<j; i++) {
+				if((!command[nodes[i]])||!(command[nodes[i]] instanceof Object)) {
+					command[nodes[i]]={'____internal':true};
+				}
+				command=command[nodes[i]];
+				if(!command.____internal) {
+					throw Error('Cannot suscribe commands on an external object.');
+				}
+			}
+			command[nodes[i]]=callback;
+		};
+
+		// Delete callback for the specified path
+		this.unsuscribe=function(path) {
+			if(!_commands) {
+				throw Error('Cannot unsuscribe commands of a disposed Commandor object.');
+			}
+			var nodes=path.split('/'),
+				command=_commands;
+			for(var i=0, j=nodes.length-1; i<j; i++) {
+				command=command[nodes[i]]={};
+			}
+			if(!command.____internal) {
+				throw Error('Cannot unsuscribe commands of an external object.');
+			}
+			command[nodes[i]]=null;
+		};
+
+		// Dispose the commandor object (remove event listeners)
+		this.dispose=function() {
+			_commands=null;
+			if(_pointerDownListener) {
+				this.rootElement.removeEventListener('MSPointerDown',
+					_pointerDownListener, true);
+				this.rootElement.removeEventListener('MSPointerUp',
+					_pointerUpListener, true);
+				this.rootElement.removeEventListener('click',
+					_pointerClickListener, true);
+			}
+			if(_touchstartListener) {
+				this.rootElement.removeEventListener('touchstart',
+					_touchstartListener, true);
+				this.rootElement.removeEventListener('touchend',
+					_touchendListener, true);
+			}
+			this.rootElement.removeEventListener('click', _clickListener, true);
+			this.rootElement.removeEventListener('keydown', _keydownListener, true);
+			this.rootElement.removeEventListener('keyup', _keyupListener, true);
+			this.rootElement.removeEventListener('change', _formChangeListener, true);
+			this.rootElement.removeEventListener('select', _formChangeListener, true);
+			this.rootElement.removeEventListener('submit', _formSubmitListener, true);
+		};
+	}
+
+	// Look for a button
+	Commandor.prototype.findButton=function(element) {
+		while(element&&element.parentNode) {
+			if('A'===element.nodeName
+				&&element.hasAttribute('href')
+				&&-1!==element.getAttribute('href').indexOf('app:')) {
+				return element;
+			}
+			if('INPUT'===element.nodeName&&element.hasAttribute('type')
+				&&(element.getAttribute('type')=='submit'
+						||element.getAttribute('type')=='button')
+				&&element.hasAttribute('formaction')
+				&&-1!==element.getAttribute('formaction').indexOf('app:')
+				) {
+				return element;
+			}
+			if(element===this.rootElement) {
+				return null;
+			}
+			element=element.parentNode;
+		}
+		return null;
+	}
+
+	// Look for a form
+	Commandor.prototype.findForm=function(element) {
+		if('FORM'===element.nodeName||
+			('INPUT'===element.nodeName&&element.hasAttribute('type')
+			&&'submit'===element.getAttribute('type'))) {
+			while(element&&element.parentNode) {
+				if('FORM'===element.nodeName&&element.hasAttribute('action')
+					&&-1!==element.getAttribute('action').indexOf('app:')) {
+					return element;
+				}
+				if(element===this.rootElement) {
+					return null;
+				}
+				element=element.parentNode;
+			}
+			return element;
+		}
+		return null;
+	};
+
+	// Look for form change
+	Commandor.prototype.findFormChange=function(element) {
+		while(element&&element.parentNode) {
+			if('FORM'===element.nodeName&&element.hasAttribute('action')
+				&&-1!==element.getAttribute('action').indexOf('app:')) {
+				return element;
+			}
+			if(element===this.rootElement) {
+				return null;
+			}
+			element=element.parentNode;
+		}
+		return element;
+	};
+
+	// Extract the command for a button
+	Commandor.prototype.doCommandOfButton=function(element, event) {
+		var command='';
+		// looking for a button with formaction attribute
+		if('INPUT'===element.nodeName) {
+			command=element.getAttribute('formaction');
+		// looking for a link
+		} else if('A'===element.nodeName) {
+			command=element.getAttribute('href');
+		}
+		// executing the command
+		this.executeCommand(event,command,element);
+	};
+
+	// Button event handler
+	Commandor.prototype.captureButton=function(event) {
+		var element=this.findButton(event.target);
+		// if there is a button, stop event
+		if(element) {
+			// if the button is not disabled, run the command
+			if((!element.hasAttribute('disabled'))
+				||'disabled'===element.getAttribute('disabled')) {
+				this.doCommandOfButton(element, event);
+			}
+			event.stopPropagation()||event.preventDefault();
+		}
+	};
+
+	// Form change handler
+	Commandor.prototype.formChange=function(event) {
+		// find the evolved form
+		var element=this.findFormChange(event.target),
+			command='';
+		// searching the data-change attribute containing the command
+		if('FORM'===element.nodeName&&element.hasAttribute('data-change')) {
+			command=element.getAttribute('data-change');
+		}
+		// executing the command
+		command&&this.executeCommand(event,command,element);
+	};
+
+	// Extract the command for a button
+	Commandor.prototype.doCommandOfForm=function(element, event) {
+		var command='';
+		// looking for a button with formaction attribute
+		if('FORM'===element.nodeName) {
+			command=element.getAttribute('action');
+		}
+		// executing the command
+		this.executeCommand(event,command,element);
+	};
+
+	// Form command handler
+	Commandor.prototype.captureForm=function(event) {
+		var element=this.findForm(event.target);
+		// if there is a button, stop event
+		if(element) {
+			// if the button is not disabled, run the command
+			if((!element.hasAttribute('disabled'))
+				||'disabled'===element.getAttribute('disabled')) {
+				this.doCommandOfForm(element, event);
+			}
+			event.stopPropagation()||event.preventDefault();
+		}
+	};
+
+// END: Module logic end
+
+	return Commandor;
+
+
+});})(this,typeof define === 'function' && define.amd ?
+	// AMD
+	define :
+	// NodeJS
+	(typeof exports === 'object'?function (name, deps, factory) {
+		var root=this;
+		if(typeof name === 'object') {
+			factory=deps; deps=name;
+		}
+		module.exports=factory.apply(this, deps.map(function(dep){
+			return require(dep);
+		}));
+	}:
+	// Global
+	function (name, deps, factory) {
+		var root=this;
+		if(typeof name === 'object') {
+			factory=deps; deps=name;  name='Commandor';
+		}
+		this[name.substring(name.lastIndexOf('/')+1)]=factory.apply(this, deps.map(function(dep){
+			return root[dep.substring(dep.lastIndexOf('/')+1)];
+		}));
+	}.bind(this))
+);
 
 },{}],20:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// wrapper for non-node envs
@@ -9057,7 +9057,7 @@ function write (chunk) {
 
 })(typeof exports === "undefined" ? sax = {} : exports)
 
-},{"__browserify_Buffer":18,"stream":11,"string_decoder":12}],21:[function(require,module,exports){
+},{"__browserify_Buffer":17,"stream":10,"string_decoder":11}],21:[function(require,module,exports){
 function SVGPathData(content) {
   this.commands = SVGPathData.parse(content);
 }
@@ -9276,7 +9276,7 @@ SVGPathDataEncoder.prototype._transform = function(commands, encoding, done) {
 module.exports = SVGPathDataEncoder;
 
 
-},{"./SVGPathData.js":21,"__browserify_Buffer":18,"stream":11,"util":14}],23:[function(require,module,exports){
+},{"./SVGPathData.js":21,"__browserify_Buffer":17,"stream":10,"util":13}],23:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Parse SVG PathData
 // http://www.w3.org/TR/SVG/paths.html#PathDataBNF
 
@@ -9799,7 +9799,7 @@ SVGPathDataParser.STATE_COMMANDS_MASK =
 module.exports = SVGPathDataParser;
 
 
-},{"./SVGPathData.js":21,"__browserify_Buffer":18,"stream":11,"util":14}],24:[function(require,module,exports){
+},{"./SVGPathData.js":21,"__browserify_Buffer":17,"stream":10,"util":13}],24:[function(require,module,exports){
 // Transform SVG PathData
 // http://www.w3.org/TR/SVG/paths.html#PathDataBNF
 
@@ -10031,7 +10031,7 @@ SVGPathDataTransformer.Y_AXIS_SIMETRY = function(yDecal) {
 module.exports = SVGPathDataTransformer;
 
 
-},{"./SVGPathData.js":21,"stream":11,"util":14}],25:[function(require,module,exports){
+},{"./SVGPathData.js":21,"stream":10,"util":13}],25:[function(require,module,exports){
 /*
  * svgicons2svgfont
  * https://github.com/nfroidure/svgicons2svgfont
@@ -10207,7 +10207,7 @@ function svgicons2svgfont(glyphs, options) {
 module.exports = svgicons2svgfont;
 
 
-},{"path":10,"sax":20,"stream":11,"svg-pathdata":21}],26:[function(require,module,exports){
+},{"path":9,"sax":20,"stream":10,"svg-pathdata":21}],26:[function(require,module,exports){
 var svgicons2svgfont = require('svgicons2svgfont')
   , commandManager = new (require("commandor"))(document.body)
   , Stream = require("stream").PassThrough
@@ -10251,6 +10251,7 @@ iconInput.addEventListener('change', function(event) {
       fileList.push(iconInput.files[i]);
     }
   }
+  iconInput.value=null;
   renderFont();
 });
 
@@ -10267,6 +10268,7 @@ function renderFont() {
   while(iconList.firstChild) {
     iconList.removeChild(iconList.firstChild);
   }
+  iconPreview.innerHTML = '';
 
   if(!fileList.length) {
     return;
@@ -10322,5 +10324,5 @@ function renderFont() {
 
 module.exports = {};
 
-},{"commandor":1,"stream":11,"string_decoder":12,"svgicons2svgfont":25}]},{},[26])
+},{"commandor":19,"stream":10,"string_decoder":11,"svgicons2svgfont":25}]},{},[26])
 ;
