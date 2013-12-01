@@ -94,7 +94,7 @@ module.exports = function(grunt) {
           files: ['src/javascript/**/*.js']
         },
         frontend: {
-          files: ['src/frontend.js', 'src/frontend/**/*.js'],
+          files: ['src/frontend.js', 'src/frontend/**/*.js', 'src/common/**/*.js'],
           tasks: ['browserify:dist']
         }
       }

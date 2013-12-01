@@ -65,6 +65,9 @@ footer {
 .icons_add span {
   display: none;
 }
+.icons_add a {
+  text-decoration: none;
+}
 .icons_add a:before {
   font-family: 'iconsfont';
   speak: none;
@@ -156,6 +159,9 @@ footer {
 .font_save span {
   display: none;
 }
+.font_save a {
+  text-decoration: none;
+}
 .font_save a:before {
   font-family: 'iconsfont';
   speak: none;
@@ -171,15 +177,6 @@ footer {
   color: #FFF;
 }
 .font_preview {
-  speak: none;
-  font-size: 6em;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   height: 21.599999999999998rem;
   overflow-y: auto;
 }

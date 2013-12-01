@@ -1,15 +1,13 @@
-var svgicons2svgfont = require('svgicons2svgfont')
+var fontBundler = new (require('./common/FontBundler.js'))()
   , commandManager = new (require("commandor"))(document.body)
   , Stream = require("stream").PassThrough
-  , StringDecoder = require('string_decoder').StringDecoder
   , iconInput = document.querySelector('input[type="file"]')
   , iconStyle = document.getElementsByTagName('style')[0]
   , iconPreview = document.querySelector('.font_preview')
   , iconList = document.querySelector('.icons_list')
   , iconTPL = document.querySelector('.icons_list li')
   , iconName = document.querySelector('.options input')
-  , fontURL
-  , fontBlob
+  , saveButton = document.querySelector('.font_save a')
   , fileList = [];
 
 // Application commands
@@ -19,13 +17,6 @@ commandManager.suscribe('icons/add', function() {
 commandManager.suscribe('icons/delete', function(event, params) {
 	fileList.splice(params.index,1);
 	renderFont();
-});
-commandManager.suscribe('font/save', function(event, params) {
-  var reader = new FileReader();
-  reader.addEventListener("loadend", function() {
-  	fontURL && window.open(reader.result);
-  });
-  reader.readAsDataURL(fontBlob);
 });
 commandManager.suscribe('render', renderFont);
 
@@ -49,11 +40,8 @@ iconInput.addEventListener('change', function(event) {
 function renderFont() {
 
   var iconStreams
-    , fontStream
     , curCodepoint = 0xE001
-    , usedCodepoints = []
-    , parts = []
-    , decoder = new StringDecoder('utf8');
+    , usedCodepoints = [];
 
   while(iconList.firstChild) {
     iconList.removeChild(iconList.firstChild);
@@ -67,7 +55,8 @@ function renderFont() {
   iconStreams = fileList.map(function(file, index) {
     var iconStream = new Stream()
       , reader = new FileReader()
-      , matches = file.name.match(/^(?:u([0-9a-f]{4})\-)?(.*).svg$/i);
+      , matches = file.name.match(/^(?:u([0-9a-f]{4})\-)?(.*).svg$/i)
+      , codepoint = (matches[1] ? parseInt(matches[1], 16) : curCodepoint++);
     reader.onload = function(e) {
       iconStream.write(e.target.result, 'utf8');
       iconStream.end();
@@ -75,40 +64,51 @@ function renderFont() {
     reader.readAsText(file);
 
     var iconRow = iconTPL.cloneNode(true);
-    iconRow.firstChild.innerHTML = file.name;
+    iconRow.firstChild.innerHTML = file.name
+      + ' [u' + codepoint.toString(16) + ']';
     iconRow.lastChild.setAttribute('href',
       iconRow.lastChild.getAttribute('href') + index);
     iconList.appendChild(iconRow);
-    
+
     return {
       stream: iconStream,
-      codepoint: (matches[1] ? parseInt(matches[1], 16) : curCodepoint++),
+      codepoint: codepoint,
       name: matches[2]
     };
   });
-  fontStream = svgicons2svgfont(iconStreams, {font: iconName.value});
-  fontStream.on('data', function(chunk) {
-    parts.push(decoder.write(chunk));
-  });
-  fontStream.on('finish', function() {
-    if(fontURL) {
-      window.URL.revokeObjectURL(fontURL);
-    }
-    fontBlob = new Blob(parts,{type: 'image/svg+xml'});
-    fontURL = window.URL.createObjectURL(fontBlob);
+  fontBundler.bundle(iconStreams, {fontName: iconName.value}, function(result) {
     iconStyle.innerHTML = '\n\
     @font-face {\n\
 	    font-family: "'+iconName.value+'";\n\
-	    src:url("'+fontURL+'") format("svg");\n\
+    	src: url("'+result.urls.eot+'");\n\
+    	src: url("'+result.urls.eot+'") format("embedded-opentype"),\n\
+	         url("'+result.urls.ttf+'") format("truetype"),\n\
+	         url("'+result.urls.woff+'") format("woff"),\n\
+	         url("'+result.urls.svg+'") format("svg");\n\
 	    font-weight: normal;\n\
 	    font-style: normal;\n\
     }\n\
     ';
-    iconPreview.setAttribute('style','font-family:'+iconName.value+';');
+    iconPreview.setAttribute('style','\n\
+	    font-family: '+iconName.value+';\n\
+	    speak: none;\n\
+	    font-style: normal;\n\
+	    font-weight: normal;\n\
+	    font-variant: normal;\n\
+	    text-transform: none;\n\
+	    line-height:7.2rem;\n\
+	    font-size:3rem;\n\
+	    -webkit-font-smoothing: antialiased;\n\
+	    -moz-osx-font-smoothing: grayscale;');
     iconPreview.innerHTML = iconStreams.length > 1 ? iconStreams.reduce(function(a,b) {
       return (a.codepoint ? '&#x' + a.codepoint.toString(16) + ';' : a)
         + ' ' + '&#x' + b.codepoint.toString(16) + ';';
     }) : '&#x' + iconStreams[0].codepoint.toString(16) + ';';
+    if(saveButton.href) {
+      window.URL.revokeObjectURL(saveButton.href);
+    }
+    saveButton.href = window.URL.createObjectURL(result.zip);
+    saveButton.download = iconName.value+'.zip';
   });
 }
 
