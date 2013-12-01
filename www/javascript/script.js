@@ -10805,7 +10805,9 @@ function svg2ttf(svgString, options) {
   //font.weightClass = svgFont.weightClass;
   font.width = svgFont.width || svgFont.unitsPerEm;
   font.height = svgFont.height || svgFont.unitsPerEm;
-  font.descent = (svgFont.descent !== undefined) ? svgFont.descent : -Math.ceil(svgFont.unitsPerEm * 0.15);
+  font.descent = 'number' === typeof svgFont.descent ?
+    svgFont.descent :
+    -Math.ceil(svgFont.unitsPerEm * 0.15);
   font.ascent = svgFont.ascent || (font.unitsPerEm + font.descent);
 
   var glyphs = font.glyphs;
@@ -11158,7 +11160,7 @@ var Font = function () {
 
   Object.defineProperty(this, 'descent', {
     get: function () {
-      return this.int_descent || -150;
+      return this.int_descent;
     },
     set: function (value) {
       this.int_descent = parseInt(Math.round(-Math.abs(value)), 10);
@@ -11441,6 +11443,7 @@ module.exports.Contour = Contour;
 module.exports.Point = Point;
 module.exports.SfntName = SfntName;
 module.exports.toTTF = require('./ttf');
+
 },{"./ttf":45,"lodash":57}],43:[function(require,module,exports){
 'use strict';
 
@@ -11538,16 +11541,17 @@ function load(str) {
     glyphs: [],
     stretch: fontFaceElem.getAttribute('font-stretch') || 'normal'
   };
-  
-  if (metadata) {
-    font.metadata = metadata.firstChild.data;
+
+  // Doesn't work with complex content like <strong>Copyright:></strong><em>Fontello</em>
+  if (metadata && metadata.textContent) {
+    font.metadata = metadata.textContent;
   }
 
   if (fontFaceElem.getAttribute('ascent')) {
     font.ascent = parseInt(fontFaceElem.getAttribute('ascent'), 10);
   }
 
-  if (fontFaceElem.getAttribute('descent')) {
+  if (fontFaceElem.getAttribute('descent') || fontFaceElem.getAttribute('descent') === '0') {
     font.descent = parseInt(fontFaceElem.getAttribute('descent'), 10);
   }
 
@@ -23849,7 +23853,9 @@ function svgicons2svgfont(glyphs, options) {
 <svg xmlns="http://www.w3.org/2000/svg">\n\
 <defs>\n\
   <font id="' + options.fontName + '" horiz-adv-x="' + fontHeight + '">\n\
-    <font-face units-per-em="' + fontHeight + '" ascent="' + fontHeight + '" descent="0" />\n\
+    <font-face font-family="' + options.fontName + '"\n\
+      units-per-em="' + fontHeight + '" ascent="' + fontHeight + '"\n\
+      descent="0" />\n\
     <missing-glyph horiz-adv-x="0" />\n');
         glyphs.forEach(function(glyph) {
           var d = '';
@@ -27072,7 +27078,6 @@ function FontBundler() {
   }
 
   function makeWOFF(ttfFontBuffer) {
-    console.log(ttfFontBuffer);
     var woffFontBuffer = ttf2woff(ttfFontBuffer.buffer).buffer;
     if(window && window.URL && window.URL.createObjectURL) {
       _urls.woff = window.URL.createObjectURL(new Blob([woffFontBuffer],
@@ -27184,7 +27189,7 @@ function renderFont() {
 	    font-variant: normal;\n\
 	    text-transform: none;\n\
 	    line-height:7.2rem;\n\
-	    font-size:3rem;\n\
+	    font-size:6rem;\n\
 	    -webkit-font-smoothing: antialiased;\n\
 	    -moz-osx-font-smoothing: grayscale;');
     iconPreview.innerHTML = iconStreams.length > 1 ? iconStreams.reduce(function(a,b) {

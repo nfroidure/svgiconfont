@@ -97,7 +97,7 @@ function renderFont() {
 	    font-variant: normal;\n\
 	    text-transform: none;\n\
 	    line-height:7.2rem;\n\
-	    font-size:3rem;\n\
+	    font-size:6rem;\n\
 	    -webkit-font-smoothing: antialiased;\n\
 	    -moz-osx-font-smoothing: grayscale;');
     iconPreview.innerHTML = iconStreams.length > 1 ? iconStreams.reduce(function(a,b) {
