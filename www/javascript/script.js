@@ -11155,6 +11155,7 @@ var Font = function () {
   this.widthClass = 5; // Medium (normal)
   this.ySubscriptXOffset = 0;
   this.ySuperscriptXOffset = 0;
+  this.int_descent = -150;
 
 //getters and setters
 
@@ -11551,7 +11552,7 @@ function load(str) {
     font.ascent = parseInt(fontFaceElem.getAttribute('ascent'), 10);
   }
 
-  if (fontFaceElem.getAttribute('descent') || fontFaceElem.getAttribute('descent') === '0') {
+  if (fontFaceElem.hasAttribute('descent')) {
     font.descent = parseInt(fontFaceElem.getAttribute('descent'), 10);
   }
 
