@@ -10805,9 +10805,7 @@ function svg2ttf(svgString, options) {
   //font.weightClass = svgFont.weightClass;
   font.width = svgFont.width || svgFont.unitsPerEm;
   font.height = svgFont.height || svgFont.unitsPerEm;
-  font.descent = 'number' === typeof svgFont.descent ?
-    svgFont.descent :
-    -Math.ceil(svgFont.unitsPerEm * 0.15);
+  font.descent = (svgFont.descent !== undefined) ? svgFont.descent : -Math.ceil(svgFont.unitsPerEm * 0.15);
   font.ascent = svgFont.ascent || (font.unitsPerEm + font.descent);
 
   var glyphs = font.glyphs;
@@ -19268,10 +19266,10 @@ SvgPath.prototype.round = function(d) {
     // [cmd, rx, ry, x-axis-rotation, large-arc-flag, sweep-flag, x, y]
     // don't touch flags and rotation
     if (segment[0].toLowerCase() === 'a') {
-      segment[1] = segment[1].toFixed(d);
-      segment[2] = segment[2].toFixed(d);
-      segment[6] = segment[6].toFixed(d);
-      segment[7] = segment[7].toFixed(d);
+      segment[1] = +segment[1].toFixed(d);
+      segment[2] = +segment[2].toFixed(d);
+      segment[6] = +segment[6].toFixed(d);
+      segment[7] = +segment[7].toFixed(d);
       return;
     }
 
@@ -19467,18 +19465,16 @@ module.exports = SvgPath;
 
 },{}],59:[function(require,module,exports){
 function DOMParser(options){
-	this.options = 
-			options != true && //To the version (0.1.12) compatible
-			options ||{locator:{}};
+	this.options = options ||{locator:{}};
 	
 }
-DOMParser.prototype.parseFromString = function(source,mimeType){
-	var sax =  new XMLReader();
+DOMParser.prototype.parseFromString = function(source,mimeType){	
 	var options = this.options;
+	var sax =  new XMLReader();
 	var domBuilder = options.domBuilder || new DOMHandler();//contentHandler and LexicalHandler
 	var errorHandler = options.errorHandler;
 	var locator = options.locator;
-	var defaultNSMap = {};
+	var defaultNSMap = options.xmlns||{};
 	var entityMap = {'lt':'<','gt':'>','amp':'&','quot':'"','apos':"'"}
 	if(locator){
 		domBuilder.setDocumentLocator(locator)
@@ -20715,11 +20711,11 @@ function importNode(doc,node,deep){
 	case ELEMENT_NODE:
 		node2 = node.cloneNode(false);
 		node2.ownerDocument = doc;
-		var attrs = node2.attributes;
-		var len = attrs.length;
-		for(var i=0;i<len;i++){
-			node2.setAttributeNodeNS(importNode(doc,attrs.item(i),deep));
-		}
+		//var attrs = node2.attributes;
+		//var len = attrs.length;
+		//for(var i=0;i<len;i++){
+			//node2.setAttributeNodeNS(importNode(doc,attrs.item(i),deep));
+		//}
 	case DOCUMENT_FRAGMENT_NODE:
 		break;
 	case ATTRIBUTE_NODE:
@@ -20882,6 +20878,7 @@ var S_S = 6;//(attr value end || tag end ) && (space offer)
 var S_C = 7;//closed el<el />
 
 function XMLReader(){
+	
 }
 
 XMLReader.prototype = {
@@ -21214,7 +21211,9 @@ function appendElement(el,domBuilder,parseStack){
 		if(nsPrefix !== false){//hack!!
 			if(localNSMap == null){
 				localNSMap = {}
+				//console.log(currentNSMap,0)
 				_copy(currentNSMap,currentNSMap={})
+				//console.log(currentNSMap,1)
 			}
 			currentNSMap[nsPrefix] = localNSMap[nsPrefix] = value;
 			a.uri = 'http://www.w3.org/2000/xmlns/'
@@ -21230,6 +21229,8 @@ function appendElement(el,domBuilder,parseStack){
 				a.uri = 'http://www.w3.org/XML/1998/namespace';
 			}if(prefix !== 'xmlns'){
 				a.uri = currentNSMap[prefix]
+				
+				//{console.log('###'+a.qName,domBuilder.locator.systemId+'',currentNSMap,a.uri)}
 			}
 		}
 	}
@@ -21422,9 +21423,6 @@ if(typeof require == 'function'){
 	exports.XMLReader = XMLReader;
 }
 
-if(typeof require == 'function'){
-exports.XMLReader=XMLReader;
-}
 
 },{}],62:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// wrapper for non-node envs
@@ -23753,6 +23751,8 @@ var Path = require("path")
 function svgicons2svgfont(glyphs, options) {
   options = options || {};
   options.fontName = options.fontName || 'iconfont';
+  options.fixedWidth = options.fixedWidth || false;
+  options.descent = options.descent || 0;
   var outputStream = new Stream()
     , log = (options.log || console.log.bind(console))
     , error = options.error || console.error.bind(console);
@@ -23760,6 +23760,10 @@ function svgicons2svgfont(glyphs, options) {
     // Parsing each icons asynchronously
     var saxStream = Sax.createStream(true);
     saxStream.on('opentag', function(tag) {
+      if(tag.attributes.display
+        && 'none' == tag.attributes.display.toLowerCase()) {
+        return;
+      }
       // Change rect elements to the corresponding path
       if('rect' === tag.name) {
         glyph.d.push(
@@ -23820,6 +23824,8 @@ function svgicons2svgfont(glyphs, options) {
           + ' ' + (cx - rx) + ',' + cy
           + 'Z'
         );
+      } else if('path' === tag.name && tag.attributes.d) {
+        glyph.d.push(tag.attributes.d);
       }
     });
     saxStream.on('attribute', function(attr) {
@@ -23827,10 +23833,6 @@ function svgicons2svgfont(glyphs, options) {
         glyph.width = parseFloat(attr.value, 10);
       } else if('height' === attr.name && 'svg' === saxStream._parser.tag.name) {
         glyph.height = parseFloat(attr.value, 10);
-      } else if('d' === attr.name && 'path' === saxStream._parser.tag.name) {
-        if(attr.value) {
-          glyph.d.push(attr.value);
-        }
       }
     });
     saxStream.on('end', function() {
@@ -23838,9 +23840,13 @@ function svgicons2svgfont(glyphs, options) {
       if(glyphs.every(function(glyph) {
         return !glyph.running;
       })) {
-        var fontHeight = (glyphs.length > 1 ? glyphs.reduce(function (gA, gB) {
-          return Math.max(gA.height || gA, gB.height || gB);
-        }) : glyphs[0].height);
+        var fontWidth = (glyphs.length > 1 ? glyphs.reduce(function (gA, gB) {
+              return Math.max(gA.width || gA, gB.width || gB);
+            }) : glyphs[0].width)
+          , fontHeight = options.fontHeight ||
+            (glyphs.length > 1 ? glyphs.reduce(function (gA, gB) {
+              return Math.max(gA.height || gA, gB.height || gB);
+            }) : glyphs[0].height);
         if(fontHeight>(glyphs.length > 1 ? glyphs.reduce(function (gA, gB) {
           return Math.min(gA.height || gA, gB.height || gB);
         }) : glyphs[0].height)) {
@@ -23853,10 +23859,10 @@ function svgicons2svgfont(glyphs, options) {
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >\n\
 <svg xmlns="http://www.w3.org/2000/svg">\n\
 <defs>\n\
-  <font id="' + options.fontName + '" horiz-adv-x="' + fontHeight + '">\n\
+  <font id="' + options.fontName + '" horiz-adv-x="' + fontWidth + '">\n\
     <font-face font-family="' + options.fontName + '"\n\
-      units-per-em="' + fontHeight + '" ascent="' + fontHeight + '"\n\
-      descent="0" />\n\
+      units-per-em="' + fontHeight + '" ascent="' + (fontHeight - options.descent) + '"\n\
+      descent="' + options.descent + '" />\n\
     <missing-glyph horiz-adv-x="0" />\n');
         glyphs.forEach(function(glyph) {
           var d = '';
@@ -23868,7 +23874,7 @@ function svgicons2svgfont(glyphs, options) {
           outputStream.write('\
     <glyph glyph-name="' + glyph.name + '"\n\
       unicode="&#x' + (glyph.codepoint.toString(16)).toUpperCase() + ';"\n\
-      horiz-adv-x="' + glyph.width + '" d="' + d +'" />\n');
+      horiz-adv-x="' + (options.fixedWidth ? fontWidth : glyph.width) + '" d="' + d +'" />\n');
         });
         outputStream.write('\
   </font>\n\
@@ -23895,7 +23901,6 @@ function svgicons2svgfont(glyphs, options) {
     if(glyphs.some(function(g) {
       return (g !== glyph && g.codepoint === glyph.codepoint);
     })) {
-      console.log(glyphs);
       throw Error('The glyph "' + glyph.name
         + '" codepoint seems to be used already elsewhere.');
     }

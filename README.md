@@ -1,6 +1,6 @@
 # svgiconfont
 
-PoC of SVG font generation in the browser
+PoC of SVG font generation in the browser.
 
 # Contribute
 ```sh
