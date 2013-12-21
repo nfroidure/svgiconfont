@@ -6,7 +6,7 @@ var fontBundler = new (require('./common/FontBundler.js'))()
   , iconPreview = document.querySelector('.font_preview')
   , iconList = document.querySelector('.icons_list')
   , iconTPL = document.querySelector('.icons_list li')
-  , iconName = document.querySelector('.options input')
+  , iconForm = document.querySelector('.options form')
   , saveButton = document.querySelector('.font_save a')
   , fileList = [];
 
@@ -76,10 +76,15 @@ function renderFont() {
       name: matches[2]
     };
   });
-  fontBundler.bundle(iconStreams, {fontName: iconName.value}, function(result) {
+  fontBundler.bundle(iconStreams, {
+      fontName: iconForm.fontname.value,
+      fontHeight: ('' !== iconForm.fontheight.value ? iconForm.fontheight.value : undefined),
+      descent: iconForm.fontdescent.value || 0,
+      fixedWidth: iconForm.fontfixed.checked
+    }, function(result) {
     iconStyle.innerHTML = '\n\
     @font-face {\n\
-	    font-family: "'+iconName.value+'";\n\
+	    font-family: "'+iconForm.fontname.value+'";\n\
     	src: url("'+result.urls.eot+'");\n\
     	src: url("'+result.urls.eot+'") format("embedded-opentype"),\n\
 	         url("'+result.urls.ttf+'") format("truetype"),\n\
@@ -90,7 +95,7 @@ function renderFont() {
     }\n\
     ';
     iconPreview.setAttribute('style','\n\
-	    font-family: '+iconName.value+';\n\
+	    font-family: '+iconForm.fontname.value+';\n\
 	    speak: none;\n\
 	    font-style: normal;\n\
 	    font-weight: normal;\n\
@@ -108,7 +113,7 @@ function renderFont() {
       window.URL.revokeObjectURL(saveButton.href);
     }
     saveButton.href = window.URL.createObjectURL(result.zip);
-    saveButton.download = iconName.value+'.zip';
+    saveButton.download = iconForm.fontname.value+'.zip';
   });
 }
 

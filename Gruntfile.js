@@ -68,6 +68,13 @@ module.exports = function(grunt) {
         }
       },
 
+      'gh-pages': {
+        options: {
+          base: 'www'
+        },
+        src: ['**']
+      },
+
       watch: {
         options: {
           livereload: true

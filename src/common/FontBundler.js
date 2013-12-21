@@ -51,7 +51,7 @@ function FontBundler() {
       , parts = []
       , decoder = new StringDecoder('utf8');
     ;
-    fontStream = svgicons2svgfont(iconStreams, {font: _options.fontName});
+    fontStream = svgicons2svgfont(iconStreams, _options);
     fontStream.on('data', function(chunk) {
       parts.push(decoder.write(chunk));
     });

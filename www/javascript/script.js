@@ -23764,8 +23764,16 @@ function svgicons2svgfont(glyphs, options) {
         && 'none' == tag.attributes.display.toLowerCase()) {
         return;
       }
+      // Save the view size
+      if('svg' === tag.name) {
+      if('width' in tag.attributes) {
+        glyph.width = parseFloat(tag.attributes.width, 10);
+      }
+      if('height' in tag.attributes) {
+        glyph.height = parseFloat(tag.attributes.height, 10);
+      }
       // Change rect elements to the corresponding path
-      if('rect' === tag.name) {
+      } else if('rect' === tag.name) {
         glyph.d.push(
           // Move to the left corner
           'M' + parseFloat(tag.attributes.x,10).toString(10)
@@ -23826,13 +23834,6 @@ function svgicons2svgfont(glyphs, options) {
         );
       } else if('path' === tag.name && tag.attributes.d) {
         glyph.d.push(tag.attributes.d);
-      }
-    });
-    saxStream.on('attribute', function(attr) {
-      if('width' === attr.name && 'svg' === saxStream._parser.tag.name) {
-        glyph.width = parseFloat(attr.value, 10);
-      } else if('height' === attr.name && 'svg' === saxStream._parser.tag.name) {
-        glyph.height = parseFloat(attr.value, 10);
       }
     });
     saxStream.on('end', function() {
@@ -27051,7 +27052,7 @@ function FontBundler() {
       , parts = []
       , decoder = new StringDecoder('utf8');
     ;
-    fontStream = svgicons2svgfont(iconStreams, {font: _options.fontName});
+    fontStream = svgicons2svgfont(iconStreams, _options);
     fontStream.on('data', function(chunk) {
       parts.push(decoder.write(chunk));
     });
@@ -27104,7 +27105,7 @@ var fontBundler = new (require('./common/FontBundler.js'))()
   , iconPreview = document.querySelector('.font_preview')
   , iconList = document.querySelector('.icons_list')
   , iconTPL = document.querySelector('.icons_list li')
-  , iconName = document.querySelector('.options input')
+  , iconForm = document.querySelector('.options form')
   , saveButton = document.querySelector('.font_save a')
   , fileList = [];
 
@@ -27174,10 +27175,15 @@ function renderFont() {
       name: matches[2]
     };
   });
-  fontBundler.bundle(iconStreams, {fontName: iconName.value}, function(result) {
+  fontBundler.bundle(iconStreams, {
+      fontName: iconForm.fontname.value,
+      fontHeight: ('' !== iconForm.fontheight.value ? iconForm.fontheight.value : undefined),
+      descent: iconForm.fontdescent.value || 0,
+      fixedWidth: iconForm.fontfixed.checked
+    }, function(result) {
     iconStyle.innerHTML = '\n\
     @font-face {\n\
-	    font-family: "'+iconName.value+'";\n\
+	    font-family: "'+iconForm.fontname.value+'";\n\
     	src: url("'+result.urls.eot+'");\n\
     	src: url("'+result.urls.eot+'") format("embedded-opentype"),\n\
 	         url("'+result.urls.ttf+'") format("truetype"),\n\
@@ -27188,7 +27194,7 @@ function renderFont() {
     }\n\
     ';
     iconPreview.setAttribute('style','\n\
-	    font-family: '+iconName.value+';\n\
+	    font-family: '+iconForm.fontname.value+';\n\
 	    speak: none;\n\
 	    font-style: normal;\n\
 	    font-weight: normal;\n\
@@ -27206,7 +27212,7 @@ function renderFont() {
       window.URL.revokeObjectURL(saveButton.href);
     }
     saveButton.href = window.URL.createObjectURL(result.zip);
-    saveButton.download = iconName.value+'.zip';
+    saveButton.download = iconForm.fontname.value+'.zip';
   });
 }
 

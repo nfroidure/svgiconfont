@@ -122,14 +122,14 @@ footer {
   -moz-osx-font-smoothing: grayscale;
   content: '\e007';
 }
-/* Font renderer */
+/* Form */
 .options {
   float: left;
   line-height: 2.4rem;
   margin: 1.2rem 1rem;
   border: 0.1rem solid #ccc;
   width: 30rem;
-  height: 12rem;
+  height: 16.8rem;
 }
 .options_title {
   padding: 0 1rem;
@@ -143,7 +143,7 @@ footer {
   margin: 1.2rem 1rem;
   border: 0.1rem solid #ccc;
   width: 30rem;
-  height: 26.4rem;
+  height: 31.2rem;
 }
 .font_title {
   padding: 0 1rem;
@@ -177,6 +177,6 @@ footer {
   color: #FFF;
 }
 .font_preview {
-  height: 21.599999999999998rem;
+  height: 26.4rem;
   overflow-y: auto;
 }

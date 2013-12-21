@@ -52,10 +52,16 @@
             <p>
               <label>Name:
                 <input type="text" name="fontname" value="geniconsfont" />
-              </label><br /><!--
+              </label><br />
+              <label>Font height:
+                <input type="number" name="fontheight" min="0" />
+              </label><br />
+              <label>Descent:
+                <input type="number" name="fontdescent" value="0" min="0" />
+              </label><br />
               <label>
                 <input type="checkbox" name="fontfixed" /> Fixed width
-              </label><br />-->
+              </label><br />
               <input type="submit" value="Render" />
             </p>
           </form>

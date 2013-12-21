@@ -16,9 +16,7 @@ main { text-align:center; width:(@gutter*30*2+4*@gutter); margin:0 auto; }
 footer { clear:both; line-height:(@vrythm*3); text-align:center; }
 
 /* Icons manager */
-.icons {
-  .section();
-}
+.icons { .section(); }
 .icons input { display:none; }
 .icons_title { .title(); }
 .icons_add { float:right; background:#000; padding:0 @gutter; height:(@vrythm*2); }
@@ -33,21 +31,17 @@ footer { clear:both; line-height:(@vrythm*3); text-align:center; }
 .icons_list a span { display:none; }
 .icons_list a:before { .icon('\e007'); }
 
-/* Font renderer */
-.options {
-  .section();
-}
+/* Form */
+.options { .section((@vrythm*14)); }
 .options_title { .title(); }
 
 /* Font renderer */
-.font {
-  .section((@vrythm*22));
-}
+.font { .section((@vrythm*26)); }
 .font_title { .title(); }
 .font_save { float:right; background:#000; padding:0 @gutter; height:(@vrythm*2); }
 .font_save span { display:none; }
 .font_save a { text-decoration:none; }
 .font_save a:before { .icon('\e003'); color:#FFF; }
 .font_preview {
-  height:(@vrythm*18); overflow-y:auto;
+  height:(@vrythm*22); overflow-y:auto;
 }
