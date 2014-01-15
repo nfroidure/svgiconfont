@@ -7321,7 +7321,8 @@ process.nextTick = (function () {
     if (canPost) {
         var queue = [];
         window.addEventListener('message', function (ev) {
-            if (ev.source === window && ev.data === 'process-tick') {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
                 ev.stopPropagation();
                 if (queue.length > 0) {
                     var fn = queue.shift();
@@ -21560,11 +21561,24 @@ function clearBuffers (parser) {
   }
 }
 
+function flushBuffers (parser) {
+  closeText(parser)
+  if (parser.cdata !== "") {
+    emitNode(parser, "oncdata", parser.cdata)
+    parser.cdata = ""
+  }
+  if (parser.script !== "") {
+    emitNode(parser, "onscript", parser.script)
+    parser.script = ""
+  }
+}
+
 SAXParser.prototype =
   { end: function () { end(this) }
   , write: write
   , resume: function () { this.error = null; return this }
   , close: function () { return this.write(null) }
+  , flush: function () { flushBuffers(this) }
   }
 
 try {
@@ -21645,7 +21659,6 @@ SAXStream.prototype.write = function (data) {
 
 SAXStream.prototype.end = function (chunk) {
   if (chunk && chunk.length) this.write(chunk)
-  else if (this.leftovers) this._parser.write(this.leftovers.toString())
   this._parser.end()
   return true
 }
@@ -21749,6 +21762,7 @@ sax.STATE =
 , ATTRIB_NAME_SAW_WHITE     : S++ // <a foo _
 , ATTRIB_VALUE              : S++ // <a foo=
 , ATTRIB_VALUE_QUOTED       : S++ // <a foo="bar
+, ATTRIB_VALUE_CLOSED       : S++ // <a foo="bar"
 , ATTRIB_VALUE_UNQUOTED     : S++ // <a foo=bar
 , ATTRIB_VALUE_ENTITY_Q     : S++ // <foo bar="&quot;"
 , ATTRIB_VALUE_ENTITY_U     : S++ // <foo bar=&quot;
@@ -22061,7 +22075,7 @@ function error (parser, er) {
 
 function end (parser) {
   if (!parser.closedRoot) strictFail(parser, "Unclosed root tag")
-  if (parser.state !== S.TEXT) error(parser, "Unexpected end")
+  if ((parser.state !== S.BEGIN) && (parser.state !== S.TEXT)) error(parser, "Unexpected end")
   closeText(parser)
   parser.c = ""
   parser.closed = true
@@ -22086,14 +22100,14 @@ function newTag (parser) {
   parser.attribList.length = 0
 }
 
-function qname (name) {
+function qname (name, attribute) {
   var i = name.indexOf(":")
     , qualName = i < 0 ? [ "", name ] : name.split(":")
     , prefix = qualName[0]
     , local = qualName[1]
 
   // <x "xmlns"="http://foo">
-  if (name === "xmlns") {
+  if (attribute && name === "xmlns") {
     prefix = "xmlns"
     local = ""
   }
@@ -22110,7 +22124,7 @@ function attrib (parser) {
   }
 
   if (parser.opt.xmlns) {
-    var qn = qname(parser.attribName)
+    var qn = qname(parser.attribName, true)
       , prefix = qn.prefix
       , local = qn.local
 
@@ -22183,7 +22197,7 @@ function openTag (parser, selfClosing) {
       var nv = parser.attribList[i]
       var name = nv[0]
         , value = nv[1]
-        , qualName = qname(name)
+        , qualName = qname(name, true)
         , prefix = qualName.prefix
         , local = qualName.local
         , uri = prefix == "" ? "" : (tag.ns[prefix] || "")
@@ -22665,7 +22679,20 @@ function write (chunk) {
         }
         attrib(parser)
         parser.q = ""
-        parser.state = S.ATTRIB
+        parser.state = S.ATTRIB_VALUE_CLOSED
+      continue
+
+      case S.ATTRIB_VALUE_CLOSED:
+        if (is(whitespace, c)) {
+          parser.state = S.ATTRIB
+        } else if (c === ">") openTag(parser)
+        else if (c === "/") parser.state = S.OPEN_TAG_SLASH
+        else if (is(nameStart, c)) {
+          strictFail(parser, "No whitespace between attributes")
+          parser.attribName = c
+          parser.attribValue = ""
+          parser.state = S.ATTRIB_NAME
+        } else strictFail(parser, "Invalid attribute name")
       continue
 
       case S.ATTRIB_VALUE_UNQUOTED:
@@ -23744,16 +23771,17 @@ var KAPPA = ((Math.sqrt(2)-1)/3)*4;
 
 // Required modules
 var Path = require("path")
-  , Stream = require("stream").PassThrough
+  , Stream = require("stream")
   , Sax = require("sax")
-  , SVGPathData = require("svg-pathdata");
+  , SVGPathData = require("svg-pathdata")
+;
 
 function svgicons2svgfont(glyphs, options) {
   options = options || {};
   options.fontName = options.fontName || 'iconfont';
   options.fixedWidth = options.fixedWidth || false;
   options.descent = options.descent || 0;
-  var outputStream = new Stream()
+  var outputStream = new Stream.PassThrough()
     , log = (options.log || console.log.bind(console))
     , error = options.error || console.error.bind(console);
   glyphs = glyphs.forEach(function (glyph, index, glyphs) {
@@ -23862,7 +23890,7 @@ function svgicons2svgfont(glyphs, options) {
 <defs>\n\
   <font id="' + options.fontName + '" horiz-adv-x="' + fontWidth + '">\n\
     <font-face font-family="' + options.fontName + '"\n\
-      units-per-em="' + fontHeight + '" ascent="' + (fontHeight - options.descent) + '"\n\
+      units-per-em="' + fontHeight + '" ascent="' + (fontHeight + options.descent) + '"\n\
       descent="' + options.descent + '" />\n\
     <missing-glyph horiz-adv-x="0" />\n');
         glyphs.forEach(function(glyph) {
@@ -27178,7 +27206,7 @@ function renderFont() {
   fontBundler.bundle(iconStreams, {
       fontName: iconForm.fontname.value,
       fontHeight: ('' !== iconForm.fontheight.value ? iconForm.fontheight.value : undefined),
-      descent: iconForm.fontdescent.value || 0,
+      descent: parseInt(iconForm.fontdescent.value, 10) || 0,
       fixedWidth: iconForm.fontfixed.checked
     }, function(result) {
     iconStyle.innerHTML = '\n\

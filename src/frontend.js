@@ -79,7 +79,7 @@ function renderFont() {
   fontBundler.bundle(iconStreams, {
       fontName: iconForm.fontname.value,
       fontHeight: ('' !== iconForm.fontheight.value ? iconForm.fontheight.value : undefined),
-      descent: iconForm.fontdescent.value || 0,
+      descent: parseInt(iconForm.fontdescent.value, 10) || 0,
       fixedWidth: iconForm.fontfixed.checked
     }, function(result) {
     iconStyle.innerHTML = '\n\
