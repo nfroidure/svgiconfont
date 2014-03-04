@@ -78,6 +78,7 @@ function renderFont() {
   });
   fontBundler.bundle(iconStreams, {
       fontName: iconForm.fontname.value,
+      normalize: iconForm.normalize.checked,
       fontHeight: ('' !== iconForm.fontheight.value ? iconForm.fontheight.value : undefined),
       descent: parseInt(iconForm.fontdescent.value, 10) || 0,
       fixedWidth: iconForm.fontfixed.checked
