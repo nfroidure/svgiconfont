@@ -4,11 +4,11 @@
   "description": "Generate a SVG font from icons",
   "main": "index.js",
   "scripts": {
-    "build_fonts": "mkdirp www/fonts &&  svgicons2svgfont --fontname=iconsfont --appendunicode documents/icons/*.svg > www/fonts/iconsfont.svg && svg2ttf www/fonts/iconsfont.svg www/fonts/iconsfont.ttf && (ttf2eot www/fonts/iconsfont.ttf www/fonts/iconsfont.eot & ttf2woff www/fonts/iconsfont.ttf www/fonts/iconsfont.woff)",
+    "build_fonts": "mkdirp www/fonts &&  svgicons2svgfont --fontname=iconsfont --appendunicode documents/icons/*.svg > www/fonts/iconsfont.svg && svg2ttf www/fonts/iconsfont.svg www/fonts/iconsfont.ttf && ttf2eot www/fonts/iconsfont.ttf www/fonts/iconsfont.eot && ttf2woff www/fonts/iconsfont.ttf www/fonts/iconsfont.woff",
     "build_js": "mkdirp www/javascript && browserify src/frontend.js -o www/javascript/script.js",
     "build_css": "mkdirp www/css && lessc documents/less/main.less > www/css/screen.css",
     "prebuild": "rimraf www",
-    "build": "mkdirp www && cp documents/html/* www/ && (npm run build_js & npm run build_fonts & npm run build_css)",
+    "build": "mkdirp www && cp documents/html/* www/ && npm run build_js && npm run build_fonts && npm run build_css",
     "prepublish": "npm run build",
     "publish": "buildbranch gh-pages www"
   },
