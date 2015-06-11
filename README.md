@@ -10,5 +10,5 @@ grunt dev
 
 # Build
 ```sh
-grunt dist
+npm run build
 ```
