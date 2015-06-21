@@ -4,7 +4,7 @@
   "description": "Generate a SVG font from icons",
   "main": "index.js",
   "scripts": {
-    "build_fonts": "mkdirp www/fonts &&  svgicons2svgfont --fontname=iconsfont --appendunicode documents/icons/*.svg > www/fonts/iconsfont.svg && svg2ttf www/fonts/iconsfont.svg www/fonts/iconsfont.ttf && ttf2eot www/fonts/iconsfont.ttf www/fonts/iconsfont.eot && ttf2woff www/fonts/iconsfont.ttf www/fonts/iconsfont.woff",
+    "build_fonts": "mkdirp www/fonts &&  svgicons2svgfont --fontname=iconsfont --appendunicode documents/icons/*.svg > www/fonts/iconsfont.svg && svg2ttf www/fonts/iconsfont.svg www/fonts/iconsfont.ttf && ttf2eot www/fonts/iconsfont.ttf www/fonts/iconsfont.eot && ttf2woff www/fonts/iconsfont.ttf www/fonts/iconsfont.woff && ttf2woff2 < www/fonts/iconsfont.ttf > www/fonts/iconsfont.woff2",
     "build_js": "mkdirp www/javascript && browserify src/frontend.js -o www/javascript/script.js",
     "build_css": "mkdirp www/css && lessc documents/less/main.less > www/css/screen.css",
     "prebuild": "rimraf www",
@@ -33,9 +33,10 @@
     "readable-stream": "latest",
     "rimraf": "^2.4.0",
     "svg2ttf": "2.0.0",
-    "svgicons2svgfont": "2.0.0",
+    "svgicons2svgfont": "3.0.2",
     "ttf2eot": "1.3.0",
-    "ttf2woff": "1.3.0"
+    "ttf2woff": "1.3.0",
+    "ttf2woff2": "^1.0.1"
   },
   "author": "Nicolas Froidure",
   "license": "MIT"
