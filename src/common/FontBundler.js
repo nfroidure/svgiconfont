@@ -2,6 +2,7 @@ var svgicons2svgfont = require('svgicons2svgfont');
 var svg2ttf = require('svg2ttf');
 var ttf2eot = require('ttf2eot');
 var ttf2woff = require('ttf2woff');
+var ttf2woff2 = require('ttf2woff2');
 var JSZip = require('jszip');
 var StringDecoder = require('string_decoder').StringDecoder;
 
@@ -36,6 +37,7 @@ function FontBundler() {
       _zip.file(_options.fontName+'.ttf', ttfFontBuffer);
       _zip.file(_options.fontName+'.eot', makeEOT(ttfFontBuffer));
       _zip.file(_options.fontName+'.woff', makeWOFF(ttfFontBuffer));
+      _zip.file(_options.fontName+'.woff2', makeWOFF2(ttfFontBuffer));
       callback({
         urls: _urls,
         zip: _zip.generate({type:'blob', compression:'DEFLATE'})
@@ -90,6 +92,24 @@ function FontBundler() {
         {type: 'application/octet-stream'}));
     }
     return woffFontBuffer;
+  }
+
+  function makeWOFF2(ttfFontBuffer) {
+    ttfFontBuffer = new Uint8Array(ttfFontBuffer);
+    var buf = new Buffer(ttfFontBuffer.length);
+    for(var i = 0, j = ttfFontBuffer.length; i < j; i++) {
+      buf.writeUInt8(ttfFontBuffer[i], i);
+    }
+    buf = ttf2woff2(buf);
+    var woff2FontBuffer = new Uint8Array(buf.length);
+    for(i = 0, j = buf.length; i < j; i++) {
+      woff2FontBuffer[i] = buf.readUInt8(i);
+    }
+    if(window && window.URL && window.URL.createObjectURL) {
+      _urls.woff2 = window.URL.createObjectURL(new Blob([woff2FontBuffer],
+        {type: 'application/octet-stream'}));
+    }
+    return woff2FontBuffer;
   }
 }
 

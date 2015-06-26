@@ -91,7 +91,8 @@ function renderFont() {
     	src: url("'+result.urls.eot+'");\n\
     	src: url("'+result.urls.eot+'") format("embedded-opentype"),\n\
 	         url("'+result.urls.ttf+'") format("truetype"),\n\
-	         url("'+result.urls.woff+'") format("woff"),\n\
+           url("'+result.urls.woff+'") format("woff"),\n\
+           url("'+result.urls.woff2+'") format("woff2"),\n\
 	         url("'+result.urls.svg+'") format("svg");\n\
 	    font-weight: normal;\n\
 	    font-style: normal;\n\
