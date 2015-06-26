@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SVG Icon Font: Build SVG fonts right in your browser!</title>
+        <meta name="description" content="SVG Icon Font helps building and trying your icon font without relying on any server.">
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/screen.css">
+        <style>
+          /* Here be fonts */
+        </style>
+    </head>
+    <body>
+        <!--[if lt IE 9]>
+            <script>document.location.href=http://browsehappy.com;</script>
+        <![endif]-->
+
+        <header>
+          <h1>SVG Icon Font</h1>
+          <p>
+            A full frontend icon font generator. To get your font, just add SVG
+            icons and download your ZIP file.
+          </p>
+        </header>
+
+      <main><section class="font">
+          <p class="font_save">
+            <a title="Save your font to disk"><span>
+              Save
+            </span></a>
+          </p>
+          <h2 class="font_title">Preview</h2>
+          <p class="font_preview"></p>
+       </section><section class="icons">
+          <p class="icons_add">
+            <a href="app:icons/add"
+              title="Add icons to your font"><span>
+              Add
+            </span></a>
+            <input type="file" name="icons" multiple="multiple" />
+          </p>
+          <h2 class="icons_title">SVG Icons</h2>
+          <ul class="icons_list">
+            <li><strong>Icon name
+              </strong><a href="app:icons/delete?index=" title="Remove this icon"><span>
+                Remove
+            </span></a></li>
+          </ul>
+        </section><section class="options">
+          <h2 class="options_title">Options</h2>
+          <form action="app:render">
+            <p>
+              <label>Name:
+                <input type="text" name="fontname" value="geniconsfont" />
+              </label><br />
+              <label>Font height:
+                <input type="number" name="fontheight" min="0" value="150" />
+              </label><br />
+              <label>Descent:
+                <input type="number" name="fontdescent" min="0" value="0" />
+              </label><br />
+              <label>
+                <input type="checkbox" name="fontfixed" /> Fixed width
+              </label><br />
+              <label>
+                <input type="checkbox" name="hcenter" checked="checked" /> Center horizontally
+              </label><br />
+              <label>
+                <input type="checkbox" name="normalize" checked="checked" /> Normalize icons
+              </label><br />
+              <input type="submit" value="Render" />
+            </p>
+          </form>
+        </section></main>
+
+       <footer>
+         <p>
+          This is just a PoC to illustrate browserify use, i strongly
+          recommend you to use the
+          <a href="https://github.com/nfroidure/svgicons2svgfont#cli-interface">CLI interface</a>
+           or Gulp/Grunt plugins.
+        </p>
+        <p>
+          Shared with love by <a href="https://twitter.com/nfroidure">
+          @nfroidure</a>. <a href="https://github.com/nfroidure/svgiconfont">
+          Fork it on GitHub!</a>. MIT License.
+        </p>
+      </footer>
+      <script src="javascript/script.js"></script>
+    </body>
+</html>
+

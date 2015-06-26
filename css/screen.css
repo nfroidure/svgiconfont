@@ -1,0 +1,182 @@
+/* Colors */
+/* Layout */
+/* RWD */
+/* Sections */
+/* Icons */
+@font-face {
+  font-family: 'iconsfont';
+  src: url('../fonts/iconsfont.eot');
+  src: url('../fonts/iconsfont.eot') format('embedded-opentype'), url('../fonts/iconsfont.ttf') format('truetype'), url('../fonts/iconsfont.woff') format('woff'), url('../fonts/iconsfont.woff2') format('woff2'), url('../fonts/iconsfont.svg') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/******** Simple reset		********/
+html,
+body {
+  height: 100%;
+  font-size: 1rem;
+  line-height: 1.2rem;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+/* Icons manager */
+header {
+  line-height: 3.6rem;
+  text-align: center;
+}
+main {
+  text-align: center;
+  width: 64rem;
+  margin: 0 auto;
+}
+footer {
+  clear: both;
+  line-height: 3.6rem;
+  text-align: center;
+}
+/* Icons manager */
+.icons {
+  float: left;
+  line-height: 2.4rem;
+  margin: 1.2rem 1rem;
+  border: 0.1rem solid #ccc;
+  width: 30rem;
+  height: 12rem;
+}
+.icons input {
+  display: none;
+}
+.icons_title {
+  padding: 0 1rem;
+  height: 2.4rem;
+  border-bottom: 0.1rem dotted #000;
+}
+.icons_add {
+  float: right;
+  background: #000;
+  padding: 0 1rem;
+  height: 2.4rem;
+}
+.icons_add span {
+  display: none;
+}
+.icons_add a {
+  text-decoration: none;
+}
+.icons_add a:before {
+  font-family: 'iconsfont';
+  speak: none;
+  font-size: 100%;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 2rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: '\e002';
+  color: #FFF;
+}
+.icons_list {
+  clear: both;
+  list-style-type: none;
+  height: 9.6rem;
+  overflow-y: auto;
+}
+.icons_list li:nth-child(2n) {
+  background: #ddd;
+  height: 2.4rem;
+}
+.icons_list li:nth-child(2n+1) {
+  background: #fff;
+  height: 2.4rem;
+}
+.icons_list strong {
+  padding: 0 1rem;
+}
+.icons_list a {
+  float: right;
+  padding: 0 1rem;
+  height: 2.4rem;
+  color: #000;
+  text-decoration: none;
+}
+.icons_list a span {
+  display: none;
+}
+.icons_list a:before {
+  font-family: 'iconsfont';
+  speak: none;
+  font-size: 100%;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 2rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: '\e007';
+}
+/* Form */
+.options {
+  float: left;
+  line-height: 2.4rem;
+  margin: 1.2rem 1rem;
+  border: 0.1rem solid #ccc;
+  width: 30rem;
+  height: 16.8rem;
+}
+.options_title {
+  padding: 0 1rem;
+  height: 2.4rem;
+  border-bottom: 0.1rem dotted #000;
+}
+/* Font renderer */
+.font {
+  float: left;
+  line-height: 2.4rem;
+  margin: 1.2rem 1rem;
+  border: 0.1rem solid #ccc;
+  width: 30rem;
+  height: 31.2rem;
+}
+.font_title {
+  padding: 0 1rem;
+  height: 2.4rem;
+  border-bottom: 0.1rem dotted #000;
+}
+.font_save {
+  float: right;
+  background: #000;
+  padding: 0 1rem;
+  height: 2.4rem;
+}
+.font_save span {
+  display: none;
+}
+.font_save a {
+  text-decoration: none;
+}
+.font_save a:before {
+  font-family: 'iconsfont';
+  speak: none;
+  font-size: 100%;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 2rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: '\e003';
+  color: #FFF;
+}
+.font_preview {
+  height: 28.8rem;
+  overflow-y: auto;
+}
